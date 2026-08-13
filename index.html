@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEA — Sistema de Investigaciones</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f0f0f; color: #e0e0e0; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .login-page { display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%); }
+        .login-box { background: #1a1a2e; padding: 40px; border-radius: 8px; text-align: center; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); }
+        .login-box h1 { margin-bottom: 10px; color: #fff; }
+        .login-box p { color: #999; margin-bottom: 30px; }
+        .discord-btn { display: inline-block; padding: 12px 30px; background: #5865F2; color: white; text-decoration: none; border-radius: 4px; font-weight: 600; cursor: pointer; border: none; font-size: 16px; }
+        .discord-btn:hover { background: #4752C4; }
+        .main-page { display: none; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid #333; margin-bottom: 30px; }
+        .header h1 { color: #fff; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; }
+        .logout-btn { padding: 8px 16px; background: #d32f2f; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; }
+        .logout-btn:hover { background: #b71c1c; }
+        .controls { display: flex; gap: 10px; margin-bottom: 20px; }
+        .btn { padding: 10px 20px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; }
+        .btn:hover { background: #1976D2; }
+        .btn:disabled { background: #666; cursor: not-allowed; }
+        .folders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .folder-card { background: #1a1a2e; padding: 20px; border-radius: 8px; border-left: 4px solid #2196F3; transition: transform 0.2s; }
+        .folder-card:hover { transform: translateY(-5px); }
+        .folder-card h3 { color: #fff; margin-bottom: 8px; }
+        .folder-card p { color: #999; font-size: 14px; margin: 5px 0; }
+        .folder-actions { display: flex; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #333; }
+        .folder-actions button { flex: 1; padding: 8px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; }
+        .edit-btn { background: #2196F3; color: white; }
+        .edit-btn:hover { background: #1976D2; }
+        .delete-btn { background: #d32f2f; color: white; }
+        .delete-btn:hover { background: #b71c1c; }
+        .copy-btn { background: #4CAF50; color: white; }
+        .copy-btn:hover { background: #388E3C; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
+        .modal.active { display: flex; }
+        .modal-content { background: #1a1a2e; padding: 30px; border-radius: 8px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; }
+        .modal-content h2 { margin-bottom: 20px; color: #fff; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; color: #e0e0e0; font-weight: 600; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; background: #0f0f1e; border: 1px solid #333; border-radius: 4px; color: #e0e0e0; font-size: 14px; }
+        .form-group textarea { resize: vertical; min-height: 100px; }
+        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #2196F3; }
+        .modal-buttons { display: flex; gap: 10px; margin-top: 30px; }
+        .modal-buttons button { flex: 1; padding: 12px; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; }
+        .save-btn { background: #4CAF50; color: white; }
+        .save-btn:hover { background: #388E3C; }
+        .cancel-btn { background: #666; color: white; }
+        .cancel-btn:hover { background: #555; }
+        .view-folder { background: #1a1a2e; padding: 30px; border-radius: 8px; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; }
+        .view-folder h2 { color: #fff; margin-bottom: 20px; }
+        .view-section { margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #333; }
+        .view-section h3 { color: #2196F3; margin-bottom: 10px; font-size: 14px; text-transform: uppercase; }
+        .view-section p { color: #e0e0e0; line-height: 1.6; white-space: pre-wrap; }
+        .no-folders { text-align: center; padding: 40px 20px; color: #999; }
+        .error { background: #d32f2f; color: white; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+        .success { background: #4CAF50; color: white; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div id="loginPage" class="login-page">
+        <div class="login-box">
+            <h1>🚨 DEA</h1>
+            <p>Sistema de Gestión de Investigaciones</p>
+            <button class="discord-btn" onclick="loginWithDiscord()">Iniciar sesión con Discord</button>
+        </div>
+    </div>
+
+    <div id="mainPage" class="main-page">
+        <div class="container">
+            <div class="header">
+                <h1>📋 Sistema de Investigaciones — DEA</h1>
+                <div class="user-info">
+                    <img id="userAvatar" class="user-avatar" alt="Avatar">
+                    <div>
+                        <p id="userName" style="margin: 0;">Usuario</p>
+                        <p id="userRole" style="margin: 0; font-size: 12px; color: #999;">Rol</p>
+                    </div>
+                    <button class="logout-btn" onclick="logout()">Salir</button>
+                </div>
+            </div>
+
+            <div id="message"></div>
+
+            <div class="controls">
+                <button class="btn" id="createBtn" onclick="openCreateModal()">+ Nueva Investigación</button>
+            </div>
+
+            <div id="foldersContainer" class="folders-grid"></div>
+        </div>
+    </div>
+
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Nueva Investigación</h2>
+            <form id="investigationForm">
+                <div class="form-group">
+                    <label>Título de la Investigación *</label>
+                    <input type="text" id="titulo" required>
+                </div>
+                <div class="form-group">
+                    <label>Nombre del Agente *</label>
+                    <input type="text" id="agenteName" required>
+                </div>
+                <div class="form-group">
+                    <label>Placa del Agente *</label>
+                    <input type="text" id="agentePlaca" required>
+                </div>
+                <div class="form-group">
+                    <label>Rango del Agente *</label>
+                    <input type="text" id="agenteRango" required>
+                </div>
+                <div class="form-group">
+                    <label>Nombre del Supervisor *</label>
+                    <input type="text" id="supervisorName" required>
+                </div>
+                <div class="form-group">
+                    <label>Placa del Supervisor *</label>
+                    <input type="text" id="supervisorPlaca" required>
+                </div>
+                <div class="form-group">
+                    <label>Rango del Supervisor *</label>
+                    <input type="text" id="supervisorRango" required>
+                </div>
+                <div class="form-group">
+                    <label>Relato de los Hechos *</label>
+                    <textarea id="relato" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Base Legal (Artículos Imputados)</label>
+                    <textarea id="baseLegal"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Informe Preliminar y Actuaciones Realizadas</label>
+                    <textarea id="informe"></textarea>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="cancel-btn" onclick="closeCreateModal()">Cancelar</button>
+                    <button type="submit" class="save-btn">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="viewModal" class="modal">
+        <div style="display: flex; justify-content: center; align-items: center; width: 100%; padding: 20px;">
+            <div style="position: relative; width: 100%;">
+                <button style="position: absolute; top: -40px; right: 0; background: #666; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;" onclick="closeViewModal()">Cerrar</button>
+                <div id="viewContent" class="view-folder"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'TU_BACKEND_URL_AQUI'; // Cambiar después
+        const ALLOWED_ROLE = '1536562568565624851';
+        const EDIT_ROLE = '1536562569597427827';
+
+        let currentUser = null;
+        let currentUserRoles = [];
+        let investigations = [];
+        let editingId = null;
+
+        function loginWithDiscord() {
+            window.location.href = `${BACKEND_URL}/auth/discord`;
+        }
+
+        async function handleCallback() {
+            const params = new URLSearchParams(window.location.search);
+            const token = params.get('token');
+            
+            if (token) {
+                localStorage.setItem('token', token);
+                window.history.replaceState({}, document.title, window.location.pathname);
+                await loadUser();
+            }
+        }
+
+        async function loadUser() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/user`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (res.ok) {
+                    const user = await res.json();
+                    currentUser = user;
+                    currentUserRoles = user.roles || [];
+
+                    if (!currentUserRoles.includes(ALLOWED_ROLE)) {
+                        showMessage('No tienes permiso para acceder', 'error');
+                        return;
+                    }
+
+                    showMainPage();
+                    loadInvestigations();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function loadInvestigations() {
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/investigations`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    investigations = await res.json();
+                    renderFolders();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function showMainPage() {
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('mainPage').style.display = 'block';
+            document.getElementById('userName').textContent = currentUser.username;
+            document.getElementById('userAvatar').src = currentUser.avatar;
+            document.getElementById('userRole').textContent = 'Agente DEA';
+            document.getElementById('createBtn').style.display = currentUserRoles.includes(EDIT_ROLE) ? 'block' : 'none';
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            currentUser = null;
+            currentUserRoles = [];
+            document.getElementById('loginPage').style.display = 'flex';
+            document.getElementById('mainPage').style.display = 'none';
+        }
+
+        function openCreateModal() {
+            editingId = null;
+            document.getElementById('modalTitle').textContent = 'Nueva Investigación';
+            document.getElementById('investigationForm').reset();
+            document.getElementById('createModal').classList.add('active');
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createModal').classList.remove('active');
+        }
+
+        function closeViewModal() {
+            document.getElementById('viewModal').classList.remove('active');
+        }
+
+        document.getElementById('investigationForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const token = localStorage.getItem('token');
+
+            const data = {
+                titulo: document.getElementById('titulo').value,
+                agente: {
+                    nombre: document.getElementById('agenteName').value,
+                    placa: document.getElementById('agentePlaca').value,
+                    rango: document.getElementById('agenteRango').value
+                },
+                supervisor: {
+                    nombre: document.getElementById('supervisorName').value,
+                    placa: document.getElementById('supervisorPlaca').value,
+                    rango: document.getElementById('supervisorRango').value
+                },
+                relato: document.getElementById('relato').value,
+                baseLegal: document.getElementById('baseLegal').value,
+                informe: document.getElementById('informe').value
+            };
+
+            try {
+                const url = editingId ? `${BACKEND_URL}/api/investigations/${editingId}` : `${BACKEND_URL}/api/investigations`;
+                const method = editingId ? 'PUT' : 'POST';
+
+                const res = await fetch(url, {
+                    method,
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (res.ok) {
+                    showMessage('Investigación guardada', 'success');
+                    closeCreateModal();
+                    loadInvestigations();
+                }
+            } catch (e) {
+                showMessage('Error al guardar', 'error');
+            }
+        });
+
+        function renderFolders() {
+            const container = document.getElementById('foldersContainer');
+
+            if (investigations.length === 0) {
+                container.innerHTML = '<div class="no-folders"><h3>No hay investigaciones</h3></div>';
+                return;
+            }
+
+            container.innerHTML = investigations.map(inv => {
+                const isAuthor = inv.createdBy === currentUser.id;
+                const canEdit = currentUserRoles.includes(EDIT_ROLE);
+
+                return `
+                    <div class="folder-card">
+                        <h3>${inv.titulo}</h3>
+                        <p><strong>Agente:</strong> ${inv.agente.nombre}</p>
+                        <p><strong>Supervisor:</strong> ${inv.supervisor.nombre}</p>
+                        <p><strong>Fecha:</strong> ${inv.fecha}</p>
+                        <div class="folder-actions">
+                            <button class="edit-btn" onclick="viewFolder('${inv.id}')">Ver</button>
+                            ${isAuthor && canEdit ? `<button class="edit-btn" onclick="editFolder('${inv.id}')">Editar</button>` : ''}
+                            ${isAuthor && canEdit ? `<button class="copy-btn" onclick="copyFolder('${inv.id}')">Copiar</button>` : ''}
+                            ${isAuthor && canEdit ? `<button class="delete-btn" onclick="deleteFolder('${inv.id}')">Eliminar</button>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function viewFolder(id) {
+            const inv = investigations.find(i => i.id === id);
+            if (!inv) return;
+
+            const html = `
+                <h2>${inv.titulo}</h2>
+                <div class="view-section"><h3>Fecha</h3><p>${inv.fecha}</p></div>
+                <div class="view-section"><h3>Agente</h3><p>Nombre: ${inv.agente.nombre}\nPlaca: ${inv.agente.placa}\nRango: ${inv.agente.rango}</p></div>
+                <div class="view-section"><h3>Supervisor</h3><p>Nombre: ${inv.supervisor.nombre}\nPlaca: ${inv.supervisor.placa}\nRango: ${inv.supervisor.rango}</p></div>
+                <div class="view-section"><h3>Relato</h3><p>${inv.relato}</p></div>
+                ${inv.baseLegal ? `<div class="view-section"><h3>Base Legal</h3><p>${inv.baseLegal}</p></div>` : ''}
+                ${inv.informe ? `<div class="view-section"><h3>Informe</h3><p>${inv.informe}</p></div>` : ''}
+            `;
+
+            document.getElementById('viewContent').innerHTML = html;
+            document.getElementById('viewModal').classList.add('active');
+        }
+
+        function editFolder(id) {
+            const inv = investigations.find(i => i.id === id);
+            if (!inv || inv.createdBy !== currentUser.id) {
+                showMessage('No tienes permiso', 'error');
+                return;
+            }
+
+            editingId = inv.id;
+            document.getElementById('modalTitle').textContent = 'Editar Investigación';
+            document.getElementById('titulo').value = inv.titulo;
+            document.getElementById('agenteName').value = inv.agente.nombre;
+            document.getElementById('agentePlaca').value = inv.agente.placa;
+            document.getElementById('agenteRango').value = inv.agente.rango;
+            document.getElementById('supervisorName').value = inv.supervisor.nombre;
+            document.getElementById('supervisorPlaca').value = inv.supervisor.placa;
+            document.getElementById('supervisorRango').value = inv.supervisor.rango;
+            document.getElementById('relato').value = inv.relato;
+            document.getElementById('baseLegal').value = inv.baseLegal;
+            document.getElementById('informe').value = inv.informe;
+
+            document.getElementById('createModal').classList.add('active');
+        }
+
+        async function copyFolder(id) {
+            const token = localStorage.getItem('token');
+            const inv = investigations.find(i => i.id === id);
+            if (!inv || inv.createdBy !== currentUser.id) return;
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/investigations/${id}/copy`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (res.ok) {
+                    showMessage('Investigación copiada', 'success');
+                    loadInvestigations();
+                }
+            } catch (e) {
+                showMessage('Error al copiar', 'error');
+            }
+        }
+
+        async function deleteFolder(id) {
+            if (!confirm('¿Eliminar esta investigación?')) return;
+
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/investigations/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (res.ok) {
+                    showMessage('Investigación eliminada', 'success');
+                    loadInvestigations();
+                }
+            } catch (e) {
+                showMessage('Error al eliminar', 'error');
+            }
+        }
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `<div class="${type}">${text}</div>`;
+            setTimeout(() => { messageDiv.innerHTML = ''; }, 5000);
+        }
+
+        handleCallback();
+        loadUser();
+    </script>
+</body>
+  </html>
